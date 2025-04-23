@@ -1,4 +1,4 @@
-# 🤖 Decipher
+# SageSense
 
 A comprehensive web application for training, analyzing, and deploying machine learning models with an intuitive user interface.
 
@@ -54,16 +54,16 @@ A comprehensive web application for training, analyzing, and deploying machine l
 ### Project Structure
 
 ```
-├── app.py                 # Main application entry point
+├── app.py                # Main application entry point
 ├── utils.py              # Utility functions for ML operations
 ├── pages/
-│   ├── Home.py          # Landing page
-│   ├── Dataset_Load.py  # Dataset management
-│   ├── Train_Models.py  # Model training interface
+│   ├── Home.py           # Landing page
+│   ├── Dataset_Load.py   # Dataset management
+│   ├── Train_Models.py   # Model training interface
 │   ├── Upload_Predict.py # Prediction interface
-│   └── Visualization.py # Model analysis and visualization
-├── models/              # Directory for saved models
-└── datasets/           # Directory for datasets
+│   └── Visualization.py  # Model analysis and visualization
+├── models/               # Directory for saved models
+└── datasets/             # Directory for datasets
 ```
 
 ### Key Components
@@ -99,13 +99,6 @@ A comprehensive web application for training, analyzing, and deploying machine l
 -   Data quality monitoring
 
 ## 🚀 Getting Started
-
-1. Clone the repository:
-
-```bash
-git clone https://github.com/git-raghav/Decipher.git
-cd Decipher
-```
 
 2. Install dependencies:
 
@@ -145,16 +138,5 @@ streamlit run app.py
     - Analyze data quality
     - Generate visualizations
 
-## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🙏 Acknowledgments
-
--   Built with ❤️ using Streamlit
--   Sample datasets from various sources
 -   ML libraries and tools from the Python ecosystem
