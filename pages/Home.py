@@ -1,7 +1,7 @@
 import streamlit as st
 
 def show():
-    st.title("Decipher")
+    st.title("SageSense")
 
     st.markdown("""
     ## Welcome to ML Model Trainer & Analyzer
