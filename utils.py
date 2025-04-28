@@ -18,16 +18,23 @@ MODELS = {
 
 import os
 
-def preprocess_data(df):
+def preprocess_data(df, target_column):
     """
-    Preprocess the data by encoding categorical columns and handling missing values.
+    Preprocess the data by encoding categorical columns, handling missing values,
+    and removing unwanted columns (e.g., CustomerID).
     
     Args:
         df: DataFrame containing the data
+        target_column: The target column to exclude from the DataFrame
     
     Returns:
-        df: DataFrame with categorical columns encoded and missing values handled
+        df: DataFrame with categorical columns encoded, missing values handled,
+            and unwanted columns removed
     """
+    # Drop the 'CustomerID' column if it exists
+    if 'CustomerID' in df.columns:
+        df = df.drop(columns=['CustomerID'])
+    
     # Handle missing values
     df = df.dropna()  # You can use imputation if you want to fill missing values instead
 
@@ -51,7 +58,7 @@ def train_and_save_model(df, target_column, model_name, test_size=0.2, random_st
         tuple: (accuracy, model_path, y_test, y_pred, feature_importance)
     """
     # Preprocess data to handle categorical variables
-    df = preprocess_data(df)
+    df = preprocess_data(df, target_column)
 
     # Prepare data
     X = df.drop(columns=[target_column])
