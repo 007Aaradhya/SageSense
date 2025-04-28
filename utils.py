@@ -18,6 +18,24 @@ MODELS = {
 
 import os
 
+def preprocess_data(df):
+    """
+    Preprocess the data by encoding categorical columns and handling missing values.
+    
+    Args:
+        df: DataFrame containing the data
+    
+    Returns:
+        df: DataFrame with categorical columns encoded and missing values handled
+    """
+    # Handle missing values
+    df = df.dropna()  # You can use imputation if you want to fill missing values instead
+
+    # Convert categorical columns to one-hot encoding
+    df = pd.get_dummies(df, drop_first=True)  # drop_first=True avoids multicollinearity in some models
+    
+    return df
+
 def train_and_save_model(df, target_column, model_name, test_size=0.2, random_state=42):
     """
     Train a model and save it to disk.
@@ -32,6 +50,9 @@ def train_and_save_model(df, target_column, model_name, test_size=0.2, random_st
     Returns:
         tuple: (accuracy, model_path, y_test, y_pred, feature_importance)
     """
+    # Preprocess data to handle categorical variables
+    df = preprocess_data(df)
+
     # Prepare data
     X = df.drop(columns=[target_column])
     y = df[target_column]
