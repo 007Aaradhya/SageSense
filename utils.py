@@ -6,7 +6,6 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
 from sklearn.metrics import accuracy_score
-import numpy as np
 from pathlib import Path
 
 MODELS = {
@@ -62,7 +61,7 @@ def train_and_save_model(df, target_column, model_name, test_size=0.2, random_st
         random_state: Random seed for reproducibility
 
     Returns:
-        tuple: (accuracy, model_path, y_test, y_pred, feature_importance)
+        tuple: (accuracy, model_path, y_test, y_pred)
     """
     try:
         # Preprocess data to handle categorical variables
@@ -84,13 +83,6 @@ def train_and_save_model(df, target_column, model_name, test_size=0.2, random_st
         y_pred = model.predict(X_test)
         accuracy = accuracy_score(y_test, y_pred)
 
-        # Get feature importance if available
-        feature_importance = None
-        if hasattr(model, 'feature_importances_'):
-            feature_importance = model.feature_importances_
-        elif hasattr(model, 'coef_'):
-            feature_importance = np.abs(model.coef_[0])
-
         # Save model and feature names
         models_dir = Path("models")
         models_dir.mkdir(exist_ok=True)
@@ -105,7 +97,7 @@ def train_and_save_model(df, target_column, model_name, test_size=0.2, random_st
 
         joblib.dump(model_data, model_filename)
 
-        return accuracy, model_filename, y_test, y_pred, feature_importance
+        return accuracy, model_filename, y_test, y_pred
     
     except Exception as e:
         raise ValueError(f"Error during model training: {str(e)}")
@@ -126,26 +118,18 @@ def predict(model, df):
         raise ValueError(f"Error during prediction: {str(e)}")
 
 def get_model_info(model_path):
-    """Get information about a trained model."""
+    """Get basic information about a trained model."""
     try:
         model_data = joblib.load(model_path)
         model = model_data['model']
         feature_names = model_data['feature_names']
         target_column = model_data['target_column']
 
-        info = {
+        return {
             "type": type(model).__name__,
             "parameters": model.get_params(),
-            "feature_importance": None,
             "feature_names": feature_names,
             "target_column": target_column
         }
-
-        if hasattr(model, 'feature_importances_'):
-            info["feature_importance"] = model.feature_importances_
-        elif hasattr(model, 'coef_'):
-            info["feature_importance"] = np.abs(model.coef_[0])
-
-        return info
     except Exception as e:
         raise ValueError(f"Error getting model info: {str(e)}")
