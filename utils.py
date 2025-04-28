@@ -16,8 +16,6 @@ MODELS = {
     "XGBoost": XGBClassifier
 }
 
-import os
-
 def preprocess_data(df, target_column):
     """
     Preprocess the data by encoding categorical columns, handling missing values,
@@ -31,15 +29,24 @@ def preprocess_data(df, target_column):
         df: DataFrame with categorical columns encoded, missing values handled,
             and unwanted columns removed
     """
+    # Make a copy of the DataFrame to avoid SettingWithCopyWarning
+    df = df.copy()
+    
     # Drop the 'CustomerID' column if it exists
     if 'CustomerID' in df.columns:
-        df = df.drop(columns=['CustomerID'])
+        df = df.drop(columns=['CustomerID'], errors='ignore')
     
     # Handle missing values
-    df = df.dropna()  # You can use imputation if you want to fill missing values instead
+    df = df.dropna()
+    
+    # Check if target column exists
+    if target_column not in df.columns:
+        raise ValueError(f"Target column '{target_column}' not found in DataFrame")
 
     # Convert categorical columns to one-hot encoding
-    df = pd.get_dummies(df, drop_first=True)  # drop_first=True avoids multicollinearity in some models
+    categorical_cols = df.select_dtypes(include=['object', 'category']).columns
+    if len(categorical_cols) > 0:
+        df = pd.get_dummies(df, columns=categorical_cols, drop_first=True)
     
     return df
 
@@ -57,73 +64,88 @@ def train_and_save_model(df, target_column, model_name, test_size=0.2, random_st
     Returns:
         tuple: (accuracy, model_path, y_test, y_pred, feature_importance)
     """
-    # Preprocess data to handle categorical variables
-    df = preprocess_data(df, target_column)
+    try:
+        # Preprocess data to handle categorical variables
+        df = preprocess_data(df, target_column)
 
-    # Prepare data
-    X = df.drop(columns=[target_column])
-    y = df[target_column]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
+        # Prepare data
+        X = df.drop(columns=[target_column])
+        y = df[target_column]
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=test_size, random_state=random_state
+        )
 
-    # Initialize and train model
-    model_class = MODELS[model_name]
-    model = model_class()
-    model.fit(X_train, y_train)
+        # Initialize and train model
+        model_class = MODELS[model_name]
+        model = model_class()
+        model.fit(X_train, y_train)
 
-    # Make predictions
-    y_pred = model.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
+        # Make predictions
+        y_pred = model.predict(X_test)
+        accuracy = accuracy_score(y_test, y_pred)
 
-    # Get feature importance if available
-    feature_importance = None
-    if hasattr(model, 'feature_importances_'):
-        feature_importance = model.feature_importances_
-    elif hasattr(model, 'coef_'):
-        feature_importance = np.abs(model.coef_[0])
+        # Get feature importance if available
+        feature_importance = None
+        if hasattr(model, 'feature_importances_'):
+            feature_importance = model.feature_importances_
+        elif hasattr(model, 'coef_'):
+            feature_importance = np.abs(model.coef_[0])
 
-    # Save model and feature names
-    models_dir = Path("models")
-    models_dir.mkdir(exist_ok=True)
-    model_filename = f"models/{model_name.replace(' ', '_')}_{random_state}.pkl"
+        # Save model and feature names
+        models_dir = Path("models")
+        models_dir.mkdir(exist_ok=True)
+        model_filename = f"models/{model_name.replace(' ', '_')}_{random_state}.pkl"
 
-    # Create a dictionary containing both the model and feature names
-    model_data = {
-        'model': model,
-        'feature_names': X.columns.tolist(),
-        'target_column': target_column
-    }
+        # Create a dictionary containing both the model and feature names
+        model_data = {
+            'model': model,
+            'feature_names': X.columns.tolist(),
+            'target_column': target_column
+        }
 
-    joblib.dump(model_data, model_filename)
+        joblib.dump(model_data, model_filename)
 
-    return accuracy, model_filename, y_test, y_pred, feature_importance
+        return accuracy, model_filename, y_test, y_pred, feature_importance
+    
+    except Exception as e:
+        raise ValueError(f"Error during model training: {str(e)}")
 
 def load_model(model_path):
     """Load a trained model from disk."""
-    model_data = joblib.load(model_path)
-    return model_data['model']
+    try:
+        model_data = joblib.load(model_path)
+        return model_data['model']
+    except Exception as e:
+        raise ValueError(f"Error loading model: {str(e)}")
 
 def predict(model, df):
     """Make predictions using a trained model."""
-    return model.predict(df)
+    try:
+        return model.predict(df)
+    except Exception as e:
+        raise ValueError(f"Error during prediction: {str(e)}")
 
 def get_model_info(model_path):
     """Get information about a trained model."""
-    model_data = joblib.load(model_path)
-    model = model_data['model']
-    feature_names = model_data['feature_names']
-    target_column = model_data['target_column']
+    try:
+        model_data = joblib.load(model_path)
+        model = model_data['model']
+        feature_names = model_data['feature_names']
+        target_column = model_data['target_column']
 
-    info = {
-        "type": type(model).__name__,
-        "parameters": model.get_params(),
-        "feature_importance": None,
-        "feature_names": feature_names,
-        "target_column": target_column
-    }
+        info = {
+            "type": type(model).__name__,
+            "parameters": model.get_params(),
+            "feature_importance": None,
+            "feature_names": feature_names,
+            "target_column": target_column
+        }
 
-    if hasattr(model, 'feature_importances_'):
-        info["feature_importance"] = model.feature_importances_
-    elif hasattr(model, 'coef_'):
-        info["feature_importance"] = np.abs(model.coef_[0])
+        if hasattr(model, 'feature_importances_'):
+            info["feature_importance"] = model.feature_importances_
+        elif hasattr(model, 'coef_'):
+            info["feature_importance"] = np.abs(model.coef_[0])
 
-    return info
+        return info
+    except Exception as e:
+        raise ValueError(f"Error getting model info: {str(e)}")
