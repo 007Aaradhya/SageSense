@@ -1,5 +1,6 @@
 # **SageSense**    
-*Live Demo [Click here](https://sagesense-kdknbexfgr7lrhheyqriys.streamlit.app)*
+*Live Demo [https://sagesense-kdknbexfgr7lrhheyqriys.streamlit.app](https://sagesense-kdknbexfgr7lrhheyqriys.streamlit.app)*
+
 ---  
 
 ## 📌 **Overview**  
