@@ -1,111 +1,171 @@
 import streamlit as st
 import pandas as pd
 import os
+import numpy as np
 from pathlib import Path
+import requests
+from io import StringIO
+import plotly.express as px
+
+def load_sample_dataset(dataset_name):
+    """Load a sample dataset with enhanced error handling."""
+    datasets = {
+        "Titanic": "https://raw.githubusercontent.com/datasciencedojo/datasets/master/titanic.csv",
+        "Iris": "https://raw.githubusercontent.com/uci-ml/datasets/main/iris/iris.csv",
+        "Wine Quality": "https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv",
+        "Heart Disease": "https://raw.githubusercontent.com/ronitgavaskar/datasets/master/Heart.csv"
+    }
+    
+    iris_columns = ['sepal_length', 'sepal_width', 'petal_length', 'petal_width', 'class']
+    
+    try:
+        response = requests.get(datasets[dataset_name])
+        response.raise_for_status()  # Raise HTTPError for bad responses
+        
+        if dataset_name == "Iris":
+            df = pd.read_csv(StringIO(response.text), header=None, names=iris_columns)
+        elif dataset_name == "Wine Quality":
+            df = pd.read_csv(StringIO(response.text), sep=';')
+        else:
+            df = pd.read_csv(StringIO(response.text))
+            
+        return df
+    
+    except requests.exceptions.RequestException as e:
+        st.error(f"Failed to download dataset: {str(e)}")
+        return pd.DataFrame()
+    except pd.errors.EmptyDataError:
+        st.error("Received empty dataset")
+        return pd.DataFrame()
 
 def show():
-    # Initialize session state for refresh
-    if 'refresh' not in st.session_state:
-        st.session_state.refresh = False
-
-    st.title("Dataset Management")
-
-    # Create datasets directory if it doesn't exist
-    datasets_dir = Path("datasets")
-    datasets_dir.mkdir(exist_ok=True)
-
-    # List existing datasets
-    existing_datasets = [f for f in datasets_dir.glob("*.csv")]
-
-    # Sidebar for dataset selection
-    with st.sidebar:
-        st.subheader("Available Datasets")
-        if existing_datasets:
-            selected_dataset = st.selectbox(
-                "Select a dataset",
-                options=[f.name for f in existing_datasets],
-                format_func=lambda x: x.replace(".csv", "")
-            )
-            if selected_dataset:
-                df = pd.read_csv(datasets_dir / selected_dataset)
-                st.write(f"Shape: {df.shape}")
-                st.write("Columns:", df.columns.tolist())
-        else:
-            st.info("No datasets available. Upload a new dataset below.")
-
-    # Main content
-    st.subheader("Upload New Preprocessed Dataset")
-
-    # File uploader
-    uploaded_file = st.file_uploader("Upload CSV File", type=["csv"])
-
-    if uploaded_file:
-        try:
-            # Read the file
-            df = pd.read_csv(uploaded_file)
-
-            # Display dataset info
-            st.write("### Dataset Preview")
-            st.dataframe(df.head())
-
-            st.write("### Dataset Information")
-            col1, col2 = st.columns(2)
-            with col1:
-                st.write(f"Shape: {df.shape}")
-                st.write(f"Number of columns: {len(df.columns)}")
-            with col2:
-                st.write("Data Types:")
-                st.write(df.dtypes)
-
-            # Save dataset
-            if st.button("Save Dataset"):
-                # Create a clean filename
-                filename = uploaded_file.name.lower().replace(" ", "_")
-                if not filename.endswith(".csv"):
-                    filename += ".csv"
-
-                # Save to datasets directory
-                filepath = datasets_dir / filename
-                df.to_csv(filepath, index=False)
-                st.success(f"Dataset saved successfully as {filename}")
-                st.rerun()
-
-        except Exception as e:
-            st.error(f"Error processing file: {str(e)}")
-
-    # Add some sample datasets
-    st.subheader("Sample Datasets")
-    sample_datasets = {
-        "Titanic": "https://raw.githubusercontent.com/datasciencedojo/datasets/master/titanic.csv",
-        "Iris": "https://raw.githubusercontent.com/jbrownlee/Datasets/master/iris.csv"
-    }
-
-    for name, url in sample_datasets.items():
-        if st.button(f"Load {name} Dataset"):
+    st.title("📊 Dataset Management")
+    Path("datasets").mkdir(exist_ok=True)
+    
+    tab1, tab2 = st.tabs(["Upload Dataset", "Sample Datasets"])
+    
+    with tab1:
+        st.subheader("Upload Your Dataset")
+        uploaded_file = st.file_uploader("Choose a CSV file", type=["csv"], key="file_uploader")
+        
+        if uploaded_file is not None:
             try:
-                df = pd.read_csv(url)
-                filename = f"{name.lower()}.csv"
-                filepath = datasets_dir / filename
-                df.to_csv(filepath, index=False)
-                st.success(f"{name} dataset loaded and saved successfully!")
-                st.rerun()
+                df = pd.read_csv(uploaded_file)
+                
+                # Generate default name if not provided
+                default_name = uploaded_file.name if uploaded_file.name.endswith('.csv') else f"{uploaded_file.name}.csv"
+                save_name = st.text_input("Save dataset as:", default_name)
+                
+                overwrite = st.checkbox("Overwrite existing file?")
+                if st.button("Save Uploaded Dataset", key="save_uploaded"):
+                    save_path = Path("datasets") / save_name
+                    
+                    if save_path.exists() and not overwrite:
+                        st.error(f"File {save_name} exists! Enable overwrite.")
+                    else:
+                        df.to_csv(save_path, index=False)
+                        st.success(f"Dataset saved as {save_path}")
+                        st.write(f"Size: {save_path.stat().st_size/1024:.2f} KB")
+                
+                show_dataset_stats(df)
+                
             except Exception as e:
-                st.error(f"Error loading {name} dataset: {str(e)}")
+                st.error(f"Error processing file: {str(e)}")
+    
+    with tab2:
+        st.subheader("Sample Datasets")
+        sample_dataset = st.selectbox(
+            "Select a sample dataset",
+            ["Titanic", "Iris", "Wine Quality", "Heart Disease"],
+            key="sample_select"
+        )
+        
+        descriptions = {
+            "Titanic": "Passenger data from the Titanic shipwreck (1309 rows, 14 cols)",
+            "Iris": "Measurements of iris flowers (150 rows, 5 cols)",
+            "Wine Quality": "Physicochemical properties of red wines (1599 rows, 12 cols)",
+            "Heart Disease": "Clinical heart disease data (303 rows, 14 cols)"
+        }
+        
+        st.markdown(f"**{sample_dataset}**: {descriptions[sample_dataset]}")
+        
+        if st.button("Load Sample Dataset", key="load_sample"):
+            with st.spinner(f"Loading {sample_dataset}..."):
+                df = load_sample_dataset(sample_dataset)
+                
+                if not df.empty:
+                    st.success(f"Successfully loaded {sample_dataset} dataset!")
+                    st.dataframe(df.head())
+                    
+                    save_name = f"{sample_dataset.lower().replace(' ', '_')}.csv"
+                    save_path = Path("datasets") / save_name
+                    
+                    if st.button(f"Save {sample_dataset} Dataset", key=f"save_{sample_dataset}"):
+                        if save_path.exists() and not st.checkbox("Overwrite existing file?", key=f"overwrite_{sample_dataset}"):
+                            st.error("File exists! Enable overwrite.")
+                        else:
+                            df.to_csv(save_path, index=False)
+                            st.success(f"Saved as {save_name}")
+                    
+                    show_dataset_stats(df)
 
-    # Dataset management section
-    if existing_datasets:
-        st.subheader("Dataset Management")
-        for dataset in existing_datasets:
-            col1, col2 = st.columns([3, 1])
-            with col1:
-                st.write(f"**{dataset.stem}**")
-                df = pd.read_csv(dataset)
-                st.write(f"Shape: {df.shape} | Columns: {len(df.columns)}")
-            with col2:
-                if st.button("Delete", key=f"delete_{dataset.stem}"):
-                    try:
-                        os.remove(dataset)
-                        st.success(f"Deleted {dataset.name}")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Error deleting {dataset.name}: {str(e)}")
+    show_available_datasets()
+
+def show_dataset_stats(df):
+    """Display dataset statistics and visualizations."""
+    st.subheader("Dataset Information")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Rows", df.shape[0])
+        st.metric("Columns", df.shape[1])
+    with col2:
+        st.metric("Missing Values", df.isnull().sum().sum())
+        st.metric("Duplicates", df.duplicated().sum())
+    
+    # Show data types and memory usage
+    st.subheader("Data Types")
+    dtype_info = pd.DataFrame({
+        'Column': df.columns,
+        'Type': df.dtypes,
+        'Unique': df.nunique(),
+        'Missing': df.isnull().sum()
+    })
+    st.dataframe(dtype_info, use_container_width=True)
+    
+    # Visualizations
+    st.subheader("Quick Visualizations")
+    viz_col = st.selectbox("Select column to visualize", df.columns)
+    
+    if pd.api.types.is_numeric_dtype(df[viz_col]):
+        fig = px.histogram(df, x=viz_col, title=f"Distribution of {viz_col}")
+    else:
+        fig = px.bar(df[viz_col].value_counts(), title=f"Count of {viz_col}")
+    st.plotly_chart(fig)
+
+def show_available_datasets():
+    """Show and manage existing datasets."""
+    st.subheader("Available Datasets")
+    datasets = list(Path("datasets").glob("*.csv"))
+    
+    if not datasets:
+        st.info("No datasets available yet.")
+        return
+    
+    selected = st.selectbox(
+        "Select a dataset to view", 
+        [d.name for d in datasets],
+        key="dataset_select"
+    )
+    
+    if selected:
+        df = pd.read_csv(Path("datasets") / selected)
+        st.dataframe(df.head())
+        
+        if st.button(f"Delete {selected}", key=f"delete_{selected}"):
+            (Path("datasets") / selected).unlink()
+            st.success(f"Deleted {selected}")
+            st.experimental_rerun()
+
+if __name__ == "__main__":
+    show()

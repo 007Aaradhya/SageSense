@@ -1,54 +1,65 @@
 import streamlit as st
+from pathlib import Path
 
 def show():
-    st.title("SageSense")
+    st.title("🧠 SageSense")
+    st.subheader("A comprehensive platform for machine learning model development")
 
     st.markdown("""
-    ## Welcome to ML Model Trainer & Analyzer
+    ### Welcome to SageSense!
 
-    This comprehensive tool helps you train, analyze, and deploy machine learning models with ease.
+    SageSense is a powerful web application for training, analyzing, and deploying machine learning models with an intuitive user interface.
 
-    ### Key Features:
+    **Getting Started:**
+    1. Use the sidebar to navigate between different pages
+    2. Start by uploading or selecting a dataset in the Dataset Load page
+    3. Train your models with customizable parameters
+    4. Make predictions on new data
+    5. Analyze model performance with interactive visualizations
 
-    #### 📊 Dataset Management
-    - Load and store preprocessed datasets (Titanic, Iris, Mushrooms, etc.)
-    - Persistent storage of datasets for future use
-    - Easy dataset selection and management
-
-    #### 🤖 Model Training
-    - Train multiple ML models on your dataset
-    - Support for various algorithms:
-        - Logistic Regression
-        - Random Forest
-        - Support Vector Machine (SVM)
-        - XGBoost
-    - Automatic model saving and versioning
-
-    #### 🔮 Predictions
-    - Make predictions on new data
-    - Download prediction results
-    - Batch prediction support
-
-    #### 📈 Visualization & Analysis
+    **Features:**
+    - Support for multiple ML algorithms
     - Comprehensive model performance metrics
-    - SHAP values for feature importance
-    - Evidently AI for model monitoring
-    - Data drift detection
     - Interactive visualizations
-
-    ### Getting Started:
-    1. Go to the "Dataset Load" page to upload or select a dataset
-    2. Navigate to "Train Models" to train your ML models
-    3. Use "Predictions" to make predictions on new data
-    4. Visit "Visualization" for detailed model analysis
-
+    - Dataset management
+    - Prediction generation
     """)
 
-    # Add a footer with contact information
+    # Show a quick guide
+    st.subheader("Quick Guide")
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.info("**📊 Dataset Management**\n- Upload and store datasets\n- Load sample datasets\n- Easy dataset selection")
+
+    with col2:
+        st.info("**🎯 Model Training**\n- Multiple ML algorithms\n- Customizable parameters\n- Performance metrics")
+
+    with col3:
+        st.info("**📈 Visualization & Analysis**\n- Model performance metrics\n- Feature importance\n- Interactive visualizations")
+
+    # Recent activity section
+    st.subheader("Recent Activity")
+
+    # Check for recent datasets
+    datasets_dir = Path("datasets")
+    recent_datasets = list(datasets_dir.glob("*.csv"))
+    if recent_datasets:
+        st.write(f"📁 Recent datasets: {', '.join([ds.name for ds in recent_datasets[:3]])}")
+    else:
+        st.write("📁 No datasets available. Upload a dataset to get started.")
+
+    # Check for recent models
+    models_dir = Path("models")
+    recent_models = list(models_dir.glob("*.pkl"))
+    if recent_models:
+        st.write(f"💾 Recent models: {', '.join([m.name for m in recent_models[:3]])}")
+    else:
+        st.write("💾 No models available. Train a model to see it here.")
+
+    # Footer
     st.markdown("---")
-    st.markdown("""
-    <div style='text-align: center'>
-        <p>Built with ❤️ using Streamlit</p>
-        <p>For support or questions, please contact us</p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown("**SageSense** - Developed with ❤️ using Streamlit")
+
+if __name__ == "__main__":
+    show()

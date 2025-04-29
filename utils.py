@@ -1,154 +1,100 @@
 import pandas as pd
-import joblib
+import numpy as np
+import pickle
+from pathlib import Path
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
-from sklearn.metrics import accuracy_score
-from pathlib import Path
-import numpy as np
+from sklearn.metrics import (
+    accuracy_score, precision_score, recall_score, 
+    f1_score, roc_auc_score, confusion_matrix
+)
+import shap
+import matplotlib.pyplot as plt
+import seaborn as sns
 
-MODELS = {
-    "Logistic Regression": LogisticRegression,
-    "Random Forest": RandomForestClassifier,
-    "SVM": SVC,
-    "XGBoost": XGBClassifier
-}
+# Create necessary directories
+Path("models").mkdir(exist_ok=True)
+Path("datasets").mkdir(exist_ok=True)
 
-def preprocess_data(df, target_column):
-    """
-    Preprocess the data by encoding categorical columns, handling missing values,
-    and removing unwanted columns (e.g., CustomerID).
-    
-    Args:
-        df: DataFrame containing the data
-        target_column: The target column to exclude from the DataFrame
-    
-    Returns:
-        df: DataFrame with categorical columns encoded, missing values handled,
-            and unwanted columns removed
-    """
-    # Make a copy of the DataFrame to avoid SettingWithCopyWarning
-    df = df.copy()
-    
-    # Drop the 'CustomerID' column if it exists
-    if 'CustomerID' in df.columns:
-        df = df.drop(columns=['CustomerID'], errors='ignore')
-    
-    # Check if target column exists
-    if target_column not in df.columns:
-        raise ValueError(f"Target column '{target_column}' not found in DataFrame")
-
-    # Handle missing values - replace with appropriate method per column type
-    for col in df.columns:
-        if df[col].dtype in ['int64', 'float64']:
-            # For numeric columns, fill with median
-            df[col] = df[col].fillna(df[col].median())
-        else:
-            # For categorical columns, fill with most frequent value
-            df[col] = df[col].fillna(df[col].mode()[0] if not df[col].mode().empty else 'Unknown')
-    
-    # Convert categorical columns to one-hot encoding
-    categorical_cols = df.select_dtypes(include=['object', 'category']).columns
-    if len(categorical_cols) > 0:
-        df = pd.get_dummies(df, columns=categorical_cols, drop_first=True)
-    
-    return df
-
-def train_and_save_model(df, target_column, model_name, test_size=0.2, random_state=42):
-    """
-    Train a model and save it to disk.
-
-    Args:
-        df: DataFrame containing the data
-        target_column: Name of the target column
-        model_name: Name of the model to train
-        test_size: Proportion of data to use for testing
-        random_state: Random seed for reproducibility
-
-    Returns:
-        tuple: (accuracy, model_path, y_test, y_pred, feature_importance)
-    """
+def load_dataset(dataset_name):
+    """Load a dataset from the datasets directory"""
     try:
-        # Preprocess data to handle categorical variables
-        df = preprocess_data(df, target_column)
+        df = pd.read_csv(Path("datasets") / dataset_name)
+        return df
+    except Exception as e:
+        raise Exception(f"Error loading dataset: {str(e)}")
 
-        # Prepare data
-        X = df.drop(columns=[target_column])
-        y = df[target_column]
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=test_size, random_state=random_state
-        )
+def split_data(df, target_column, test_size=0.2, random_state=42):
+    """Split data into train and test sets"""
+    X = df.drop(columns=[target_column])
+    y = df[target_column]
+    return train_test_split(X, y, test_size=test_size, random_state=random_state)
 
-        # Initialize and train model
-        model_class = MODELS[model_name]
-        model = model_class()
-        model.fit(X_train, y_train)
-
-        # Make predictions
-        y_pred = model.predict(X_test)
-        accuracy = accuracy_score(y_test, y_pred)
-
-        # Extract feature importance (if available)
-        feature_importance = None
-        if model_name in ["Random Forest", "XGBoost"]:
-            feature_importance = model.feature_importances_
-        elif model_name == "Logistic Regression":
-            # For logistic regression, use coefficients as feature importance
-            if hasattr(model, 'coef_'):
-                feature_importance = np.abs(model.coef_[0]) if len(model.coef_.shape) > 1 else np.abs(model.coef_)
-
-        # Save model and feature names
-        models_dir = Path("models")
-        models_dir.mkdir(exist_ok=True)
-        model_filename = f"models/{model_name.replace(' ', '_')}_{random_state}.pkl"
-
-        # Create a dictionary containing both the model and feature names
-        model_data = {
-            'model': model,
-            'feature_names': X.columns.tolist(),
-            'target_column': target_column,
-            'feature_importance': feature_importance
-        }
-
-        joblib.dump(model_data, model_filename)
-
-        return accuracy, model_filename, y_test, y_pred, feature_importance
+def train_model(model_type, X_train, y_train, params=None):
+    """Train a machine learning model"""
+    models = {
+        "Logistic Regression": LogisticRegression,
+        "Random Forest": RandomForestClassifier,
+        "SVM": SVC,
+        "XGBoost": XGBClassifier
+    }
     
-    except Exception as e:
-        raise ValueError(f"Error during model training: {str(e)}")
+    if model_type not in models:
+        raise ValueError(f"Unsupported model type: {model_type}")
+    
+    model_class = models[model_type]
+    model = model_class(**params) if params else model_class()
+    model.fit(X_train, y_train)
+    return model
 
-def load_model(model_path):
-    """Load a trained model from disk."""
-    try:
-        model_data = joblib.load(model_path)
-        return model_data['model']
-    except Exception as e:
-        raise ValueError(f"Error loading model: {str(e)}")
+def evaluate_model(model, X_test, y_test):
+    """Evaluate model performance"""
+    y_pred = model.predict(X_test)
+    y_proba = model.predict_proba(X_test)[:, 1] if hasattr(model, "predict_proba") else None
+    
+    metrics = {
+        "accuracy": accuracy_score(y_test, y_pred),
+        "precision": precision_score(y_test, y_pred, average='weighted'),
+        "recall": recall_score(y_test, y_pred, average='weighted'),
+        "f1": f1_score(y_test, y_pred, average='weighted'),
+        "roc_auc": roc_auc_score(y_test, y_proba) if y_proba is not None else None
+    }
+    
+    cm = confusion_matrix(y_test, y_pred)
+    
+    return metrics, cm
 
-def predict(model, df):
-    """Make predictions using a trained model."""
-    try:
-        return model.predict(df)
-    except Exception as e:
-        raise ValueError(f"Error during prediction: {str(e)}")
+def save_model(model, model_name):
+    """Save a trained model to disk"""
+    model_path = Path("models") / f"{model_name}.pkl"
+    with open(model_path, 'wb') as f:
+        pickle.dump(model, f)
+    return model_path
 
-def get_model_info(model_path):
-    """Get basic information about a trained model."""
-    try:
-        model_data = joblib.load(model_path)
-        model = model_data['model']
-        feature_names = model_data['feature_names']
-        target_column = model_data['target_column']
-        feature_importance = model_data.get('feature_importance', None)
+def load_model(model_name):
+    """Load a saved model from disk"""
+    model_path = Path("models") / f"{model_name}.pkl"
+    with open(model_path, 'rb') as f:
+        model = pickle.load(f)
+    return model
 
-        return {
-            "type": type(model).__name__,
-            "parameters": model.get_params(),
-            "feature_names": feature_names,
-            "target_column": target_column,
-            "feature_importance": feature_importance
-        }
-    except Exception as e:
-        raise ValueError(f"Error getting model info: {str(e)}")
+def get_feature_importance(model, feature_names):
+    """Get feature importance from a model"""
+    if hasattr(model, 'feature_importances_'):
+        return dict(zip(feature_names, model.feature_importances_))
+    elif hasattr(model, 'coef_'):
+        return dict(zip(feature_names, model.coef_[0]))
+    else:
+        return None
+
+def generate_shap_plot(model, X, feature_names):
+    """Generate SHAP values plot"""
+    explainer = shap.Explainer(model, X)
+    shap_values = explainer(X)
+    plt.figure()
+    shap.summary_plot(shap_values, X, feature_names=feature_names, show=False)
+    plt.tight_layout()
+    return plt.gcf()
