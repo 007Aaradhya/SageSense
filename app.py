@@ -6,9 +6,9 @@ import joblib
 # Page Configuration
 st.set_page_config(page_title="SageSense", layout="wide")
 
-st.title("🚀 ModelLens - Machine Learning Dashboard")
+st.title("SageeSense")
 
-st.sidebar.header("📂 Upload or Select a Dataset")
+st.sidebar.header("📂 Upload/Select a Dataset")
 
 # Ensure directories exist
 dataset_dir = "datasets"
@@ -20,13 +20,13 @@ os.makedirs(model_dir, exist_ok=True)
 available_datasets = [f for f in os.listdir(dataset_dir) if f.endswith(".csv")]
 
 # File uploader for dataset
-uploaded_file = st.sidebar.file_uploader("📤 Upload a CSV file", type=["csv"])
+uploaded_file = st.sidebar.file_uploader("Upload CSV file", type=["csv"])
 
 # Dataset selection from stored datasets
-selected_dataset = st.sidebar.selectbox("📂 Or select a pre-stored dataset", ["None"] + available_datasets)
+selected_dataset = st.sidebar.selectbox("Or select a pre-stored dataset", ["None"] + available_datasets)
 
 # Clear selection button
-if st.sidebar.button("🔄 Clear Selection"):
+if st.sidebar.button("Clear Selection"):
     uploaded_file = None
     selected_dataset = "None"
     st.session_state.selected_dataset = None
