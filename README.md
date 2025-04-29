@@ -1,142 +1,120 @@
-# SageSense
+# **SageSense**    
+*Live Demo [Click Here]([https://dockerbasics-jvxhhg7wiw2lsrnw9urnze.streamlit.app/](https://sagesense-kdknbexfgr7lrhheyqriys.streamlit.app))*
 
-A comprehensive web application for training, analyzing, and deploying machine learning models with an intuitive user interface.
+---  
 
-## 🌟 Features
+## 📌 **Overview**  
+**SageSense** is a powerful **Streamlit-based** application designed to **interpret machine learning models** using **SHAP (SHapley Additive exPlanations) values**. It provides a **clear and interactive way** to understand how models make predictions by analyzing **feature importance, impact, and accuracy**.  
 
-### 📊 Dataset Management
+This project bridges the gap between complex AI models and human interpretability, enabling users to explore **model behavior, visualize feature contributions, and evaluate performance**—all in an intuitive interface.  
 
--   Upload and store preprocessed datasets
--   Load sample datasets (Titanic, Iris)
--   Persistent storage for future use
--   Easy dataset selection and management
+---  
 
-### 🎯 Model Training
+## 🎯 **Key Features**  
 
--   Support for multiple ML algorithms:
-    -   Logistic Regression
-    -   Random Forest
-    -   Support Vector Machine (SVM)
-    -   XGBoost
--   Customizable model parameters
--   Automatic model saving and versioning
--   Performance metrics visualization
+✔️ **Upload and Analyze ML Models** – Supports `.pkl` model files.  
+✔️ **Dataset Selection & Exploration** – Upload your dataset or choose from predefined ones.  
+✔️ **Feature Importance Visualization** – Discover which features influence predictions the most.  
+✔️ **SHAP Waterfall & Summary Plots** – Understand individual and global feature contributions.  
+✔️ **SHAP Dependence Plots** – See how a single feature affects predictions.  
+✔️ **Model Accuracy Evaluation** – Calculates accuracy based on user-selected target variables.  
+✔️ **Seamless UI & Interactive Graphs** – Built with `Matplotlib`, `Plotly`, and `SHAP`.  
 
-### 🔮 Predictions
+---
 
--   Make predictions on new data
--   Download prediction results
--   Batch prediction support
--   Feature validation
+## 🛠️ **How It Works?**  
 
-### 📈 Visualization & Analysis
+🔹 **Step 1:** Select a trained machine learning model (`.pkl`).  
+🔹 **Step 2:** Choose a dataset (`.csv`) to analyze.  
+🔹 **Step 3:** Select a **target variable** to evaluate model predictions.  
+🔹 **Step 4:** Explore **feature importance** using SHAP summary & waterfall plots.  
+🔹 **Step 5:** Visualize **dependence plots** to understand individual feature effects.  
+🔹 **Step 6:** Evaluate **model accuracy** to assess its performance.  
 
--   Comprehensive model performance metrics
--   SHAP values for feature importance
--   Interactive visualizations:
-    -   Feature distributions
-    -   Correlation matrices
-    -   ROC curves
-    -   Confusion matrices
--   Statistical analysis
--   Data quality monitoring
+---
 
-## 🛠️ Implementation
-
-### Tech Stack
-
--   **Frontend**: Streamlit
--   **ML Libraries**: scikit-learn, XGBoost
--   **Data Processing**: pandas, numpy
--   **Visualization**: plotly, matplotlib, seaborn
--   **Model Analysis**: SHAP
-
-### Project Structure
+## 📂 **Project Structure**  
 
 ```
-├── app.py                # Main application entry point
-├── utils.py              # Utility functions for ML operations
-├── pages/
-│   ├── Home.py           # Landing page
-│   ├── Dataset_Load.py   # Dataset management
-│   ├── Train_Models.py   # Model training interface
-│   ├── Upload_Predict.py # Prediction interface
-│   └── Visualization.py  # Model analysis and visualization
-├── models/               # Directory for saved models
-└── datasets/             # Directory for datasets
+ModelLens/
+│── models/                 # Folder for storing trained models (.pkl)
+│── datasets/               # Folder for dataset files (.csv)
+│── app.py                  # Main Streamlit app
+│── pages/
+│   ├── Dataset_Load.py  # Data exploration and visualization
+│   ├── Train_Models.py    # Concept & Data Drift analysis
+│   ├── evidential_AI.py     # Model training & prediction
+│   ├── Shapley_Val.py    # SHAP-based explainability & accuracy
+│── requirements.txt         # Required dependencies
+│── README.md                # Project Documentation
 ```
 
-### Key Components
+---
 
-#### Model Training (`utils.py`)
+## 🖥️ **Tech Stack**  
 
--   Implements model training and saving
--   Handles feature importance extraction
--   Manages model persistence
+🔹 **Frontend:** `Streamlit`, `Matplotlib`, `Plotly`  
+🔹 **Backend:** `Python`, `SHAP`, `scikit-learn`, `Pandas`  
+🔹 **Storage:** Local `.pkl` models and `.csv` datasets  
 
-#### Dataset Management (`Dataset_Load.py`)
+---
 
--   Handles file uploads
--   Manages sample datasets
--   Provides dataset preview and information
+## 🚀 **Installation & Usage**  
 
-#### Model Training Interface (`Train_Models.py`)
-
--   Model selection and parameter tuning
--   Training progress visualization
--   Performance metrics display
-
-#### Prediction Interface (`Upload_Predict.py`)
-
--   New data upload and validation
--   Prediction generation
--   Results download
-
-#### Visualization (`Visualization.py`)
-
--   Model performance analysis
--   Feature importance visualization
--   Data quality monitoring
-
-## 🚀 Getting Started
-
-2. Install dependencies:
-
+### 🔧 **Setup the Environment**  
 ```bash
+git clone https://github.com/your-username/SageSense.git
+cd SageSense
 pip install -r requirements.txt
 ```
 
-3. Run the application:
-
+### ▶ **Run the Application**  
 ```bash
 streamlit run app.py
 ```
 
-## 📝 Usage Guide
+### 📝 **Upload and Analyze Models**  
+- Place `.pkl` models in the `models/` folder.  
+- Place `.csv` datasets in the `datasets/` folder.  
+- Select them from the **left sidebar** in the Streamlit app.  
 
-1. **Load Data**
+---
 
-    - Upload your dataset or select a sample dataset
-    - Preview and validate your data
+## 📈 **Visualizations & Insights**  
 
-2. **Train Model**
+### 🔍 **Feature Importance - SHAP Summary Plot**  
+Understand which features impact predictions the most.  
 
-    - Select your target variable
-    - Choose a model type
-    - Adjust model parameters
-    - Train and evaluate the model
+### 🔹 **Waterfall Plot**  
+Shows how individual features contribute to a single prediction.  
 
-3. **Make Predictions**
+### 📊 **Dependence Plot**  
+Examines how a specific feature interacts with model predictions.  
 
-    - Upload new data
-    - Generate predictions
-    - Download results
+### ✅ **Model Accuracy**  
+Evaluates how well the model performs on the selected dataset.  
 
-4. **Analyze Results**
-    - View model performance metrics
-    - Explore feature importance
-    - Analyze data quality
-    - Generate visualizations
+---
+
+## 🤖 **Why Use ModelLens?**  
+
+🔍 **Improve Model Transparency** – Understand AI decision-making.  
+📊 **Interactive Visualizations** – SHAP-powered insights at your fingertips.  
+📈 **Assess Model Performance** – Know how accurate your models are.  
+⚡ **User-Friendly Interface** – No coding required, just upload and analyze!  
+
+---
+![img](https://github.com/Svadha29/Model_Lens/blob/07ff17c0a85a03ba1be05a9b1de37936f5c2d0e5/images/image%20copy.png)
+
+![img](https://github.com/Svadha29/Model_Lens/blob/07ff17c0a85a03ba1be05a9b1de37936f5c2d0e5/images/image%20copy%202.png)
+
+![img](https://github.com/Svadha29/Model_Lens/blob/07ff17c0a85a03ba1be05a9b1de37936f5c2d0e5/images/image%20copy%203.png)
+
+![img](https://github.com/Svadha29/Model_Lens/blob/07ff17c0a85a03ba1be05a9b1de37936f5c2d0e5/images/image%20copy%204.png)
+
+![img](https://github.com/Svadha29/Model_Lens/blob/07ff17c0a85a03ba1be05a9b1de37936f5c2d0e5/images/image%20copy%206.png)
+
+![img](https://github.com/Svadha29/Model_Lens/blob/07ff17c0a85a03ba1be05a9b1de37936f5c2d0e5/images/image%20copy%205.png)
 
 
--   ML libraries and tools from the Python ecosystem
+🚀 **Explore, Explain, and Evaluate AI with ModelLens!** 🎯
