@@ -7,6 +7,7 @@ import plotly.express as px
 from sklearn.metrics import confusion_matrix, classification_report
 import seaborn as sns
 import matplotlib.pyplot as plt
+import numpy as np
 
 def show():
     st.title("Train ML Models")
@@ -31,86 +32,115 @@ def show():
 
     if selected_dataset:
         # Load the selected dataset
-        df = pd.read_csv(datasets_dir / selected_dataset)
+        try:
+            df = pd.read_csv(datasets_dir / selected_dataset)
+            
+            # Display dataset info
+            col1, col2 = st.columns(2)
+            with col1:
+                st.write("Dataset Shape:", df.shape)
+            with col2:
+                st.write("Number of Features:", len(df.columns))
+                
+            # Show dataset sample
+            st.subheader("Dataset Sample")
+            st.dataframe(df.head())
+            
+            # Show data types and missing values
+            st.subheader("Data Information")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.write("Data Types:")
+                st.write(df.dtypes)
+            with col2:
+                st.write("Missing Values:")
+                st.write(df.isnull().sum())
 
-        # Display dataset info
-        col1, col2 = st.columns(2)
-        with col1:
-            st.write("Dataset Shape:", df.shape)
-        with col2:
-            st.write("Number of Features:", len(df.columns))
+            # Feature selection
+            st.subheader("Feature Selection")
+            target_column = st.selectbox("Select Target Column", df.columns)
 
-        # Feature selection
-        st.subheader("Feature Selection")
-        target_column = st.selectbox("Select Target Column", df.columns)
+            # Feature columns (excluding target)
+            feature_columns = [col for col in df.columns if col != target_column]
 
-        # Feature columns (excluding target)
-        feature_columns = [col for col in df.columns if col != target_column]
+            # Model selection
+            st.subheader("Model Selection")
+            model_choice = st.selectbox(
+                "Select Model",
+                ["Logistic Regression", "Random Forest", "SVM", "XGBoost"]
+            )
 
-        # Model selection
-        st.subheader("Model Selection")
-        model_choice = st.selectbox(
-            "Select Model",
-            ["Logistic Regression", "Random Forest", "SVM", "XGBoost"]
-        )
+            # Model parameters
+            st.subheader("Model Parameters")
+            if model_choice == "Random Forest":
+                n_estimators = st.slider("Number of Trees", 10, 200, 100)
+                max_depth = st.slider("Max Depth", 2, 20, 5)
+            elif model_choice == "XGBoost":
+                n_estimators = st.slider("Number of Trees", 10, 200, 100)
+                learning_rate = st.slider("Learning Rate", 0.01, 0.3, 0.1)
+            elif model_choice == "SVM":
+                kernel = st.selectbox("Kernel", ["rbf", "linear", "poly"])
+                C = st.slider("C (Regularization)", 0.1, 10.0, 1.0)
 
-        # Model parameters
-        st.subheader("Model Parameters")
-        if model_choice == "Random Forest":
-            n_estimators = st.slider("Number of Trees", 10, 200, 100)
-            max_depth = st.slider("Max Depth", 2, 20, 5)
-        elif model_choice == "XGBoost":
-            n_estimators = st.slider("Number of Trees", 10, 200, 100)
-            learning_rate = st.slider("Learning Rate", 0.01, 0.3, 0.1)
-        elif model_choice == "SVM":
-            kernel = st.selectbox("Kernel", ["rbf", "linear", "poly"])
-            C = st.slider("C (Regularization)", 0.1, 10.0, 1.0)
+            # Training options
+            st.subheader("Training Options")
+            test_size = st.slider("Test Set Size", 0.1, 0.4, 0.2, 0.05)
+            random_state = st.number_input("Random State", 0, 1000, 42)
 
-        # Training options
-        st.subheader("Training Options")
-        test_size = st.slider("Test Set Size", 0.1, 0.4, 0.2, 0.05)
-        random_state = st.number_input("Random State", 0, 1000, 42)
+            if st.button("Train Model"):
+                try:
+                    # Create models directory if it doesn't exist
+                    models_dir = Path("models")
+                    models_dir.mkdir(exist_ok=True)
+                    
+                    with st.spinner("Training model... This may take a moment."):
+                        # Train model and get metrics
+                        accuracy, model_path, y_test, y_pred, feature_importance = train_and_save_model(
+                            df, target_column, model_choice,
+                            test_size=test_size,
+                            random_state=random_state
+                        )
 
-        if st.button("Train Model"):
-            try:
-                # Create models directory if it doesn't exist
-                models_dir = Path("models")
-                models_dir.mkdir(exist_ok=True)
+                        # Display results
+                        st.success(f"Model trained successfully! Accuracy: {accuracy:.4f}")
+                        st.write(f"Model saved at: `{model_path}`")
 
-                # Train model and get metrics
-                accuracy, model_path, y_test, y_pred, feature_importance = train_and_save_model(
-                    df, target_column, model_choice,
-                    test_size=test_size,
-                    random_state=random_state
-                )
+                        # Display confusion matrix
+                        st.subheader("Confusion Matrix")
+                        cm = confusion_matrix(y_test, y_pred)
+                        fig, ax = plt.subplots(figsize=(8, 6))
+                        sns.heatmap(cm, annot=True, fmt='d', ax=ax, cmap="Blues")
+                        plt.ylabel('Actual')
+                        plt.xlabel('Predicted')
+                        st.pyplot(fig)
 
-                # Display results
-                st.success(f"Model trained successfully! Accuracy: {accuracy:.2f}")
-                st.write(f"Model saved at: `{model_path}`")
+                        # Display classification report
+                        st.subheader("Classification Report")
+                        report = classification_report(y_test, y_pred)
+                        st.text(report)
 
-                # Display confusion matrix
-                st.subheader("Confusion Matrix")
-                cm = confusion_matrix(y_test, y_pred)
-                fig, ax = plt.subplots(figsize=(8, 6))
-                sns.heatmap(cm, annot=True, fmt='d', ax=ax)
-                st.pyplot(fig)
+                        # Display feature importance if available
+                        if feature_importance is not None:
+                            st.subheader("Feature Importance")
+                            importance_df = pd.DataFrame({
+                                'Feature': feature_columns,
+                                'Importance': feature_importance
+                            }).sort_values('Importance', ascending=False)
 
-                # Display classification report
-                st.subheader("Classification Report")
-                report = classification_report(y_test, y_pred)
-                st.text(report)
-
-                # Display feature importance if available
-                if feature_importance is not None:
-                    st.subheader("Feature Importance")
-                    importance_df = pd.DataFrame({
-                        'Feature': feature_columns,
-                        'Importance': feature_importance
-                    }).sort_values('Importance', ascending=False)
-
-                    fig = px.bar(importance_df, x='Importance', y='Feature', orientation='h')
-                    st.plotly_chart(fig)
-
-            except Exception as e:
-                st.error(f"Error during model training: {str(e)}")
-                st.error("Please check if your data is properly formatted and the target column contains valid values.")
+                            fig = px.bar(importance_df, x='Importance', y='Feature', 
+                                        orientation='h', 
+                                        title="Feature Importance",
+                                        color='Importance',
+                                        color_continuous_scale="Blues")
+                            st.plotly_chart(fig)
+                
+                except Exception as e:
+                    st.error(f"Error during model training: {str(e)}")
+                    st.error("Please check if your data is properly formatted and the target column contains valid values.")
+                    # Display more detailed error information
+                    import traceback
+                    st.error(traceback.format_exc())
+        
+        except Exception as e:
+            st.error(f"Error loading dataset: {str(e)}")
+            st.error("Please check if your dataset is properly formatted.")

@@ -7,6 +7,7 @@ from sklearn.svm import SVC
 from xgboost import XGBClassifier
 from sklearn.metrics import accuracy_score
 from pathlib import Path
+import numpy as np
 
 MODELS = {
     "Logistic Regression": LogisticRegression,
@@ -35,13 +36,19 @@ def preprocess_data(df, target_column):
     if 'CustomerID' in df.columns:
         df = df.drop(columns=['CustomerID'], errors='ignore')
     
-    # Handle missing values
-    df = df.dropna()
-    
     # Check if target column exists
     if target_column not in df.columns:
         raise ValueError(f"Target column '{target_column}' not found in DataFrame")
 
+    # Handle missing values - replace with appropriate method per column type
+    for col in df.columns:
+        if df[col].dtype in ['int64', 'float64']:
+            # For numeric columns, fill with median
+            df[col] = df[col].fillna(df[col].median())
+        else:
+            # For categorical columns, fill with most frequent value
+            df[col] = df[col].fillna(df[col].mode()[0] if not df[col].mode().empty else 'Unknown')
+    
     # Convert categorical columns to one-hot encoding
     categorical_cols = df.select_dtypes(include=['object', 'category']).columns
     if len(categorical_cols) > 0:
@@ -61,7 +68,7 @@ def train_and_save_model(df, target_column, model_name, test_size=0.2, random_st
         random_state: Random seed for reproducibility
 
     Returns:
-        tuple: (accuracy, model_path, y_test, y_pred)
+        tuple: (accuracy, model_path, y_test, y_pred, feature_importance)
     """
     try:
         # Preprocess data to handle categorical variables
@@ -83,6 +90,15 @@ def train_and_save_model(df, target_column, model_name, test_size=0.2, random_st
         y_pred = model.predict(X_test)
         accuracy = accuracy_score(y_test, y_pred)
 
+        # Extract feature importance (if available)
+        feature_importance = None
+        if model_name in ["Random Forest", "XGBoost"]:
+            feature_importance = model.feature_importances_
+        elif model_name == "Logistic Regression":
+            # For logistic regression, use coefficients as feature importance
+            if hasattr(model, 'coef_'):
+                feature_importance = np.abs(model.coef_[0]) if len(model.coef_.shape) > 1 else np.abs(model.coef_)
+
         # Save model and feature names
         models_dir = Path("models")
         models_dir.mkdir(exist_ok=True)
@@ -92,12 +108,13 @@ def train_and_save_model(df, target_column, model_name, test_size=0.2, random_st
         model_data = {
             'model': model,
             'feature_names': X.columns.tolist(),
-            'target_column': target_column
+            'target_column': target_column,
+            'feature_importance': feature_importance
         }
 
         joblib.dump(model_data, model_filename)
 
-        return accuracy, model_filename, y_test, y_pred
+        return accuracy, model_filename, y_test, y_pred, feature_importance
     
     except Exception as e:
         raise ValueError(f"Error during model training: {str(e)}")
@@ -124,12 +141,14 @@ def get_model_info(model_path):
         model = model_data['model']
         feature_names = model_data['feature_names']
         target_column = model_data['target_column']
+        feature_importance = model_data.get('feature_importance', None)
 
         return {
             "type": type(model).__name__,
             "parameters": model.get_params(),
             "feature_names": feature_names,
-            "target_column": target_column
+            "target_column": target_column,
+            "feature_importance": feature_importance
         }
     except Exception as e:
         raise ValueError(f"Error getting model info: {str(e)}")
