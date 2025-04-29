@@ -1,75 +1,81 @@
 import streamlit as st
 import os
-from pathlib import Path
+import pandas as pd
+import joblib
 
-# Set page configuration
-st.set_page_config(
-    page_title="SageSense - ML App",
-    page_icon="🧠",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# Page Configuration
+st.set_page_config(page_title="SageSense", layout="wide")
 
-# Create necessary directories if they don't exist
-Path("models").mkdir(exist_ok=True)
-Path("datasets").mkdir(exist_ok=True)
+st.title("🚀 ModelLens - Machine Learning Dashboard")
 
-# Main page content
-st.title("🧠 SageSense")
-st.subheader("A comprehensive platform for machine learning model development")
+st.sidebar.header("📂 Upload or Select a Dataset")
 
-st.markdown("""
-### Welcome to SageSense!
+# Ensure directories exist
+dataset_dir = "datasets"
+model_dir = "models"
+os.makedirs(dataset_dir, exist_ok=True)
+os.makedirs(model_dir, exist_ok=True)
 
-SageSense is a powerful web application for training, analyzing, and deploying machine learning models with an intuitive user interface.
+# List available datasets
+available_datasets = [f for f in os.listdir(dataset_dir) if f.endswith(".csv")]
 
-**Getting Started:**
-1. Use the sidebar to navigate between different pages
-2. Start by uploading or selecting a dataset in the Dataset Load page
-3. Train your models with customizable parameters
-4. Make predictions on new data
-5. Analyze model performance with interactive visualizations
+# File uploader for dataset
+uploaded_file = st.sidebar.file_uploader("📤 Upload a CSV file", type=["csv"])
 
-**Features:**
-- Support for multiple ML algorithms
-- Comprehensive model performance metrics
-- Interactive visualizations
-- Dataset management
-- Prediction generation
-""")
+# Dataset selection from stored datasets
+selected_dataset = st.sidebar.selectbox("📂 Or select a pre-stored dataset", ["None"] + available_datasets)
 
-# Show a quick guide
-st.subheader("Quick Guide")
-col1, col2, col3 = st.columns(3)
+# Clear selection button
+if st.sidebar.button("🔄 Clear Selection"):
+    uploaded_file = None
+    selected_dataset = "None"
+    st.session_state.selected_dataset = None
+    st.experimental_rerun()
 
-with col1:
-    st.info("**📊 Dataset Management**\n- Upload and store datasets\n- Load sample datasets\n- Easy dataset selection")
+# Load dataset
+df = None
 
-with col2:
-    st.info("**🎯 Model Training**\n- Multiple ML algorithms\n- Customizable parameters\n- Performance metrics")
+if uploaded_file:
+    try:
+        # Save uploaded file to datasets folder
+        dataset_path = os.path.join(dataset_dir, uploaded_file.name)
+        with open(dataset_path, "wb") as f:
+            f.write(uploaded_file.getbuffer())
 
-with col3:
-    st.info("**📈 Visualization & Analysis**\n- Model performance metrics\n- Feature importance\n- Interactive visualizations")
+        df = pd.read_csv(dataset_path, encoding="utf-8")
+        st.session_state.selected_dataset = uploaded_file.name
+        st.success(f"✅ Uploaded dataset **{uploaded_file.name}** saved and loaded successfully!")
 
-# Recent activity section
-st.subheader("Recent Activity")
+    except Exception as e:
+        st.error(f"❌ Error loading dataset: {e}")
 
-# Check for recent datasets
-datasets_dir = Path("datasets")
-recent_datasets = list(datasets_dir.glob("*.csv"))
-if recent_datasets:
-    st.write(f"📁 Recent datasets: {', '.join([ds.name for ds in recent_datasets[:3]])}")
-else:
-    st.write("📁 No datasets available. Upload a dataset to get started.")
+elif selected_dataset != "None":
+    try:
+        dataset_path = os.path.join(dataset_dir, selected_dataset)
+        df = pd.read_csv(dataset_path, encoding="utf-8")
+        st.session_state.selected_dataset = selected_dataset
+        st.success(f"✅ Pre-stored dataset **{selected_dataset}** loaded successfully!")
 
-# Check for recent models
-models_dir = Path("models")
-recent_models = list(models_dir.glob("*.pkl"))
-if recent_models:
-    st.write(f"💾 Recent models: {', '.join([m.name for m in recent_models[:3]])}")
-else:
-    st.write("💾 No models available. Train a model to see it here.")
+    except Exception as e:
+        st.error(f"❌ Error loading dataset: {e}")
 
-# Footer
-st.markdown("---")
-st.markdown("**SageSense** - Developed with ❤️ using Streamlit")
+# Display dataset preview
+if df is not None:
+    st.write("### 📊 Dataset Preview")
+    st.dataframe(df, height=400)
+
+    # Save dataset info
+    if st.button("💾 Save Dataset Info"):
+        dataset_info = {
+            "filename": st.session_state.selected_dataset,
+            "rows": df.shape[0],
+            "columns": df.shape[1],
+            "columns_list": df.columns.tolist()
+        }
+        dataset_info_path = os.path.join(dataset_dir, "dataset_info.pkl")
+        joblib.dump(dataset_info, dataset_info_path)
+        st.success("✅ Dataset info saved successfully!")
+
+
+# Navigate to other pages
+st.markdown("### 🔍 Use left sidebar to navigate to other pages.")
