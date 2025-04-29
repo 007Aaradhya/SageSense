@@ -1,6 +1,5 @@
 # **SageSense**    
-*Live Demo []([https://dockerbasics-jvxhhg7wiw2lsrnw9urnze.streamlit.app/](https://sagesense-kdknbexfgr7lrhheyqriys.streamlit.app))*
-
+*Live Demo [Click here](https://sagesense-kdknbexfgr7lrhheyqriys.streamlit.app)*
 ---  
 
 ## 📌 **Overview**  
