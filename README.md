@@ -1,5 +1,5 @@
 # **SageSense**    
-*Live Demo [Click Here]([https://dockerbasics-jvxhhg7wiw2lsrnw9urnze.streamlit.app/](https://sagesense-kdknbexfgr7lrhheyqriys.streamlit.app))*
+*Live Demo []([https://dockerbasics-jvxhhg7wiw2lsrnw9urnze.streamlit.app/](https://sagesense-kdknbexfgr7lrhheyqriys.streamlit.app))*
 
 ---  
 
@@ -104,17 +104,15 @@ Evaluates how well the model performs on the selected dataset.
 ⚡ **User-Friendly Interface** – No coding required, just upload and analyze!  
 
 ---
-![img](https://github.com/Svadha29/Model_Lens/blob/07ff17c0a85a03ba1be05a9b1de37936f5c2d0e5/images/image%20copy.png)
 
-![img](https://github.com/Svadha29/Model_Lens/blob/07ff17c0a85a03ba1be05a9b1de37936f5c2d0e5/images/image%20copy%202.png)
+![img](img_1.png)
 
-![img](https://github.com/Svadha29/Model_Lens/blob/07ff17c0a85a03ba1be05a9b1de37936f5c2d0e5/images/image%20copy%203.png)
+![img](img_2.png)
 
-![img](https://github.com/Svadha29/Model_Lens/blob/07ff17c0a85a03ba1be05a9b1de37936f5c2d0e5/images/image%20copy%204.png)
+![img](img_3.png)
 
-![img](https://github.com/Svadha29/Model_Lens/blob/07ff17c0a85a03ba1be05a9b1de37936f5c2d0e5/images/image%20copy%206.png)
+![img](img_4.png)
 
-![img](https://github.com/Svadha29/Model_Lens/blob/07ff17c0a85a03ba1be05a9b1de37936f5c2d0e5/images/image%20copy%205.png)
+![img](img_5.png)
 
-
-🚀 **Explore, Explain, and Evaluate AI with ModelLens!** 🎯
+**Thank You!** 🎯
